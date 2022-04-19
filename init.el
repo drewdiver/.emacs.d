@@ -62,10 +62,18 @@
 (dolist (mode '(eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-(setq-default fill-column 80)
+(defun er-switch-to-previous-buffer ()
+  "Switch to previously open buffer.
+Repeated invocations toggle between the two most recently open buffers."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+(global-set-key (kbd "C-c b") #'er-switch-to-previous-buffer)
+
 (add-hook 'text-mode-hook 'turn-on-auto-fill)
 (add-hook 'markdown-mode 'turn-on-auto-fill)
 (global-set-key (kbd "C-x k") 'kill-this-buffer) ; kill current buffer
+(global-set-key (kbd "C-c t") 'toggle-truncate-lines) ; turn off line wrapping
 (setq prelude-use-smooth-scrolling t)
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; use esc to quit prompts
 (setq gc-cons-threshold 50000000)
@@ -77,8 +85,8 @@
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 
-(require 'server)
-(if (not (server-running-p)) (server-start))
+;; (require 'server)
+;; (if (not (server-running-p)) (server-start))
 
 (use-package circadian
   :ensure t
@@ -93,8 +101,9 @@
   :ensure t
   :config
   (define-globalized-minor-mode my-global-fci-mode fci-mode turn-on-fci-mode)
-  (my-global-fci-mode 1)
-  (setq fci-rule-column 90)) ; set page guide at 90 like BBEdit default
+  ;; (my-global-fci-mode 1)
+  (setq fci-rule-column 90) ; set page guide at 90 like BBEdit default
+  (global-set-key [f7] 'fci-mode))
 
 (use-package smartparens
   :ensure t
@@ -109,6 +118,23 @@
   :ensure t
   :config
   (global-auto-complete-mode t))
+
+(use-package counsel
+  :bind (("M-x" . counsel-M-x)
+         ("C-x b" . counsel-ibuffer)
+         ("C-x C-f" . counsel-find-file)
+         :map minibuffer-local-map
+         ("C-r" . 'counsel-minibuffer-history)))
+
+(use-package helpful
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
 
 (use-package swiper :ensure t) ; needed for ivy
 
@@ -130,6 +156,28 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
+
+(use-package ivy-rich
+  :init
+  (ivy-rich-mode 1))
+
+(use-package neotree
+  :ensure t
+  :config
+  ;; Disable line-numbers minor mode for neotree
+  (add-hook 'neo-after-create-hook (lambda (&optional dummy) (display-line-numbers-mode -1)))
+  (global-set-key [f8] 'neotree-toggle))
+
+(use-package projectile
+  :ensure t
+  :init
+  (projectile-mode +1)
+  :config
+  ;; Recommended keymap prefix on macOS
+  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  ;; Recommended keymap prefix on Windows/Linux
+  ;; (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+  )
 
 ;; needed to run M-x all-the-icons-install-fonts
 (use-package doom-modeline
@@ -178,6 +226,17 @@
   :ensure t
   :mode ("\\.dsp?\\'" . faust-mode))
 
+(use-package go-mode
+  :ensure t
+  :mode ("\\.go?\\'" . go-mode))
+
+;; Fix eshell etc for macOS
+(use-package exec-path-from-shell
+  :ensure t
+  :init
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize)))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -186,7 +245,7 @@
  '(custom-safe-themes
    '("ced4e3d3440ba3a74bbb2b107ba9e973373b5c656dcfd37c1ac7298cd974daf0" default))
  '(package-selected-packages
-   '(circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
+   '(go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
