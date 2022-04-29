@@ -94,7 +94,7 @@ Repeated invocations toggle between the two most recently open buffers."
   (setq calendar-latitude 59.3)
   (setq calendar-longitude 18.1)
   (setq circadian-themes '((:sunrise . doom-flatwhite)
-                           (:sunset  . doom-plain-dark)))
+                           (:sunset  . doom-tokyo-night)))
   (circadian-setup))
 
 (use-package fill-column-indicator
@@ -237,6 +237,38 @@ Repeated invocations toggle between the two most recently open buffers."
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
 
+(use-package elfeed
+  :ensure t
+  :config
+  (global-set-key (kbd "C-x w") 'elfeed)
+  (setq-default elfeed-search-filter "@1-days-ago")
+  (setq elfeed-feeds
+      '("http://nullprogram.com/feed/"
+        "https://planet.emacslife.com/atom.xml"
+        "https://leancrew.com/all-this/feed.json"
+        "https://www.audiothing.net/feed/"
+        "https://branch.climateaction.tech/feed/"
+        "https://blog.codinghorror.com/rss/"
+        "https://daringfireball.net/feeds/json"
+        "https://www.dragonflydigest.com/feed"
+        "http://morrick.me/archives/tag/english/feed"
+        "https://flak.tedunangst.com/rss"
+        "https://cdn.jwz.org/blog/feed/"
+        "https://lwn.net/headlines/newrss"
+        "https://mjtsai.com/blog/feed/"
+        "https://mullvad.net/blog/feed/rss/"
+        "https://nnw.ranchero.com/feed.json"
+        "https://ubuntustudio.org/feed/"
+        "https://onefoottsunami.com/feed/json/"
+        "https://www.smbc-comics.com/comic/rss"
+        ("https://lapcatsoftware.com/articles/atom.xml" apple blog)
+        "http://localhost:1313/blog/index.xml"
+        "https://torrentfreak.com/feed/"
+        "https://unherd.com/feed/"
+        ("https://valhalladsp.com/feed/" DSP blog)
+        "Http://nullprogram.com/feed/"
+        "https://planet.emacslife.com/atom.xml")))
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -245,7 +277,7 @@ Repeated invocations toggle between the two most recently open buffers."
  '(custom-safe-themes
    '("ced4e3d3440ba3a74bbb2b107ba9e973373b5c656dcfd37c1ac7298cd974daf0" default))
  '(package-selected-packages
-   '(go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
+   '(elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
