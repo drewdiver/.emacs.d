@@ -1,8 +1,10 @@
+;; ENV SETUP
 (setq inhibit-startup-message t)
 
 (setq user-full-name "Drew Diver"
-      user-email-address "shout@drewdiver.com")
+      user-mail-address "shout@drewdiver.com")
 
+(menu-bar-mode -1)
 (scroll-bar-mode -1) ; disable visible scrollbar
 (tool-bar-mode -1) ; disable the toolbar
 (tooltip-mode -1) ; disable tooltips
@@ -10,10 +12,22 @@
 (setq visible-bell 1) ; silence
 (blink-cursor-mode -1) ; are you blind?
 (fset 'yes-or-no-p 'y-or-n-p) ; lazy
-
+(prefer-coding-system 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
 (setq-default tab-width 4
               indent-tabs-mode nil) ; tabs are spaces
+(setq prelude-use-smooth-scrolling t)
+(setq gc-cons-threshold 50000000)
+(setq large-file-warning-threshold 100000000)
 
+;; For specifics, use C-h v then type temporary-file-directory and hit enter.
+(setq backup-directory-alist
+      `((".*" . ,temporary-file-directory)))
+(setq auto-save-file-name-transforms
+      `((".*" ,temporary-file-directory t)))
+
+;; USE-PACKAGE SETUP
 (require 'package)
 
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -31,9 +45,67 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; (load-theme 'wombat)
-;; I really like flatwhite, plain, tokyo-night
-(use-package doom-themes
+;; CUSTOM FUNCTIONS
+(defun er-switch-to-previous-buffer ()
+  "Switch to previously open buffer."
+  (interactive)
+  (switch-to-buffer (other-buffer (current-buffer) 1)))
+
+(defun dd/send-buffer-to-jrnl ()
+  "Sends the content of the current buffer to jrnl."
+  (interactive)
+  (call-process-region (point-min) (point-max) "jrnl")
+  (message "Saved buffer contents in journal"))
+
+;; CUSTOM KEYBINDINGS
+(global-set-key (kbd "C-c E") 'eval-buffer) ; M-x eval-buffer becomes cumbersom
+(global-set-key (kbd "C-c I") (lambda () (interactive) (find-file user-init-file))) ; open my init.el
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; use esc to quit prompts
+(global-set-key (kbd "C-x k") 'kill-this-buffer) ; kill current buffer
+(global-set-key (kbd "C-c t") 'toggle-truncate-lines) ; turn off line wrapping
+(global-set-key (kbd "C-c C-v") 'view-mode) ; enable view-mode
+(global-set-key (kbd "C-c L") 'hl-line-mode) ; enable line highlight
+(global-set-key (kbd "C-c l") 'linum-mode) ; enable line numbers for current buffer
+(global-set-key (kbd "C-c b") #'er-switch-to-previous-buffer)
+(global-set-key (kbd "C-c m") 'mu4e)
+
+;; CUSTOM HOOKS
+(add-hook 'text-mode-hook 'turn-on-auto-fill) ; automatic line-breaks for txt and markdown
+(add-hook 'markdown-mode 'turn-on-auto-fill)
+
+;; ERC SETUP
+(setq erc-server "irc.libera.chat"
+      erc-port 6697
+      erc-nick "tiredsince1985")
+
+;; MU4E EMAIL SETUP
+;; Possible to add an "if mail-utils" found?
+(require 'mu4e)
+(setq
+ mue4e-headers-skip-duplicates t
+ mu4e-view-show-images t
+ mu4e-view-show-addresses t
+ mu4e-compose-format-flowed nil
+ mu4e-date-format "%Y/%m/%d"
+ mu4e-headers-date-format "%Y/%m/%d"
+ mu4e-change-filenames-when-moving t
+ mu4e-attachments-dir "~/Downloads"
+
+ mu4e-maildir "~/Maildir"
+ mu4e-refile-folder "/Archive"
+ mu4e-sent-folder "/Sent"
+ mu4e-drafts-folder "/Drafts"
+ mu4e-trash-folder "/Trash")
+
+(setq mu4e-get-mail-command "mbsync -a")
+
+(setq
+   message-send-mail-function   'smtpmail-send-it
+   smtpmail-default-smtp-server "smtp.fastmail.com"
+   smtpmail-smtp-server         "smtp.fastmail.com")
+
+;; PACKAGES
+(use-package doom-themes ;; flatwhite, plain, tokyo-night are all nice
   :ensure t
   :defer
   :config
@@ -45,48 +117,11 @@
   ;; Enable flashing mode-line on errors
   (doom-themes-visual-bell-config))
 
-;; To see where that is, use C-h v then type temporary-file-directory and hit enter.
-(setq backup-directory-alist
-      `((".*" . ,temporary-file-directory)))
-(setq auto-save-file-name-transforms
-      `((".*" ,temporary-file-directory t)))
-
-;; Disable line highlight for the following modes...
-(global-hl-line-mode 1) ; highlight current line
-(dolist (mode '(eshell-mode-hook))
-  (add-hook mode (lambda () (global-hl-line-mode 0))))
-
-(global-display-line-numbers-mode 1)
-
-;; Disable line numbers for the following modes...
-(dolist (mode '(eshell-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
-(defun er-switch-to-previous-buffer ()
-  "Switch to previously open buffer.
-Repeated invocations toggle between the two most recently open buffers."
-  (interactive)
-  (switch-to-buffer (other-buffer (current-buffer) 1)))
-
-(global-set-key (kbd "C-c b") #'er-switch-to-previous-buffer)
-
-(add-hook 'text-mode-hook 'turn-on-auto-fill)
-(add-hook 'markdown-mode 'turn-on-auto-fill)
-(global-set-key (kbd "C-x k") 'kill-this-buffer) ; kill current buffer
-(global-set-key (kbd "C-c t") 'toggle-truncate-lines) ; turn off line wrapping
-(setq prelude-use-smooth-scrolling t)
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; use esc to quit prompts
-(setq gc-cons-threshold 50000000)
-(setq large-file-warning-threshold 100000000)
-(global-set-key (kbd "C-c C-v") 'view-mode) ; enable view-mode
-
-;; Get correct behaviour from macOS
-(prefer-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-
-;; (require 'server)
-;; (if (not (server-running-p)) (server-start))
+;; Must to run M-x all-the-icons-install-fonts
+(use-package doom-modeline
+  :ensure t
+  :init (doom-modeline-mode 1)
+  :custom ((doom-modeline-height 15)))
 
 (use-package circadian
   :ensure t
@@ -179,12 +214,6 @@ Repeated invocations toggle between the two most recently open buffers."
   ;; (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
   )
 
-;; needed to run M-x all-the-icons-install-fonts
-(use-package doom-modeline
-  :ensure t
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
-
 (use-package magit
   :bind (("C-M-g" . magit-status)))
 
@@ -198,22 +227,6 @@ Repeated invocations toggle between the two most recently open buffers."
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.3))
-
-;; Investigate how to change map leader to <Space> like in vim...
-;; (use-package evil
-;;   :init
-;;   (setq evil-want-integration t)
-;;   (setq evil-want-keybinding nil)
-;;   :config
-;;   (evil-mode 1)
-;;   (define-key evil-insert-state-map (kbd "C-g") 'evil-normal-state))
-
-;;   ;; Use visual line motions even outside of visual-line-mode buffers
-;;   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
-;;   (evil-global-set-key 'motion "k" 'evil-previous-visual-line)
-
-;;   (evil-set-initial-state 'messages-buffer-mode 'normal)
-;;   (evil-set-initial-state 'dashboard-mode 'normal)
 
 (use-package hydra)
 
@@ -237,10 +250,21 @@ Repeated invocations toggle between the two most recently open buffers."
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
 
+(use-package howm
+     :ensure t
+     :config
+     ;; Directory configuration
+     (setq howm-home-directory "~/Sync/howm/")
+     (setq howm-directory "~/Sync/howm/")
+     (setq howm-keyword-file (expand-file-name ".howm-keys" howm-home-directory))
+     (setq howm-history-file (expand-file-name ".howm-history" howm-home-directory))
+     (setq howm-file-name-format "%Y/%m/%Y-%m-%d-%H%M%S.md"))
+
 (use-package elfeed
   :ensure t
   :config
-  (global-set-key (kbd "C-x w") 'elfeed)
+  (global-set-key (kbd "C-c w") 'elfeed)
+  (global-set-key (kbd "C-c r") 'elfeed-update)
   (setq-default elfeed-search-filter "@1-days-ago")
   (setq elfeed-feeds
       '("http://nullprogram.com/feed/"
@@ -262,12 +286,13 @@ Repeated invocations toggle between the two most recently open buffers."
         "https://onefoottsunami.com/feed/json/"
         "https://www.smbc-comics.com/comic/rss"
         ("https://lapcatsoftware.com/articles/atom.xml" apple blog)
-        "http://localhost:1313/blog/index.xml"
         "https://torrentfreak.com/feed/"
-        "https://unherd.com/feed/"
         ("https://valhalladsp.com/feed/" DSP blog)
         "Http://nullprogram.com/feed/"
-        "https://planet.emacslife.com/atom.xml")))
+        "https://planet.emacslife.com/atom.xml"
+        "https://www.omgubuntu.co.uk/feed"
+        "https://nitter.net/viznut/rss"
+        "https://nitter.net/2600stockholm/rss")))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
