@@ -68,6 +68,8 @@
 (global-set-key (kbd "C-c l") 'linum-mode) ; enable line numbers for current buffer
 (global-set-key (kbd "C-c b") #'er-switch-to-previous-buffer)
 (global-set-key (kbd "C-c m") 'mu4e)
+(global-set-key (kbd "C-c e") 'elfeed)
+(global-set-key (kbd "C-c u") 'elfeed-update)
 
 ;; CUSTOM HOOKS
 (add-hook 'text-mode-hook 'turn-on-auto-fill) ; automatic line-breaks for txt and markdown
@@ -78,8 +80,8 @@
       erc-port 6697
       erc-nick "tiredsince1985")
 
-;; MU4E EMAIL SETUP
-;; Possible to add an "if mail-utils" found?
+;; skip mu4e on macOS
+(if (not (eq system-type 'darwin))
 (require 'mu4e)
 (setq
  mue4e-headers-skip-duplicates t
@@ -103,11 +105,11 @@
    message-send-mail-function   'smtpmail-send-it
    smtpmail-default-smtp-server "smtp.fastmail.com"
    smtpmail-smtp-server         "smtp.fastmail.com")
+)
 
 ;; PACKAGES
 (use-package doom-themes ;; flatwhite, plain, tokyo-night are all nice
   :ensure t
-  :defer
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -133,7 +135,7 @@
   (circadian-setup))
 
 (use-package fill-column-indicator
-  :ensure t
+  :defer t
   :config
   (define-globalized-minor-mode my-global-fci-mode fci-mode turn-on-fci-mode)
   ;; (my-global-fci-mode 1)
@@ -197,7 +199,7 @@
   (ivy-rich-mode 1))
 
 (use-package neotree
-  :ensure t
+  :defer t
   :config
   ;; Disable line-numbers minor mode for neotree
   (add-hook 'neo-after-create-hook (lambda (&optional dummy) (display-line-numbers-mode -1)))
@@ -208,17 +210,16 @@
   :init
   (projectile-mode +1)
   :config
-  ;; Recommended keymap prefix on macOS
-  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
-  ;; Recommended keymap prefix on Windows/Linux
-  ;; (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+  (if (eq system-type 'darwin)
+      (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map) ;; Recommended keymap prefix on macOS
+    (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)) ;; Recommended keymap prefix on Windows/Linux
   )
 
 (use-package magit
+  :defer t
   :bind (("C-M-g" . magit-status)))
 
 (use-package markdown-mode
-  :ensure t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown"))
 
@@ -236,12 +237,11 @@
   ("l" text-scale-decrease "out"))
 
 (use-package faust-mode
-  :ensure t
   :mode ("\\.dsp?\\'" . faust-mode))
 
-(use-package go-mode
-  :ensure t
-  :mode ("\\.go?\\'" . go-mode))
+(use-package python
+  :mode ("\\.py\\'" . python-mode)
+  :interpreter ("python" . python-mode))
 
 ;; Fix eshell etc for macOS
 (use-package exec-path-from-shell
@@ -251,7 +251,7 @@
     (exec-path-from-shell-initialize)))
 
 (use-package howm
-     :ensure t
+     :defer t
      :config
      ;; Directory configuration
      (setq howm-home-directory "~/Sync/howm/")
@@ -260,12 +260,15 @@
      (setq howm-history-file (expand-file-name ".howm-history" howm-home-directory))
      (setq howm-file-name-format "%Y/%m/%Y-%m-%d-%H%M%S.md"))
 
-(use-package elfeed
-  :ensure t
+(use-package todotxt-mode
+  :defer t
   :config
-  (global-set-key (kbd "C-c w") 'elfeed)
-  (global-set-key (kbd "C-c r") 'elfeed-update)
-  (setq-default elfeed-search-filter "@1-days-ago")
+  (setq todotxt-default-file (expand-file-name "~/Sync/todo.txt")))
+
+(use-package elfeed
+  :defer t
+  :config
+  ;; (setq-default elfeed-search-filter "@1-days-ago")
   (setq elfeed-feeds
       '("http://nullprogram.com/feed/"
         "https://planet.emacslife.com/atom.xml"
@@ -292,7 +295,8 @@
         "https://planet.emacslife.com/atom.xml"
         "https://www.omgubuntu.co.uk/feed"
         "https://nitter.net/viznut/rss"
-        "https://nitter.net/2600stockholm/rss")))
+        "https://nitter.net/2600stockholm/rss"
+        "https://web3isgoinggreat.com/feed.xml")))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -309,3 +313,12 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(hl-line ((t (:inherit highlight :extend t :underline nil)))))
+
+;; Measure startup time
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "Emacs ready in %s with %d garbage collections."
+                     (format "%.2f seconds"
+                             (float-time
+                              (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
