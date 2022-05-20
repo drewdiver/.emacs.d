@@ -251,14 +251,70 @@
     (exec-path-from-shell-initialize)))
 
 (use-package howm
-     :defer t
      :config
      ;; Directory configuration
      (setq howm-home-directory "~/Sync/howm/")
      (setq howm-directory "~/Sync/howm/")
      (setq howm-keyword-file (expand-file-name ".howm-keys" howm-home-directory))
      (setq howm-history-file (expand-file-name ".howm-history" howm-home-directory))
-     (setq howm-file-name-format "%Y/%m/%Y-%m-%d-%H%M%S.md"))
+     (setq howm-file-name-format "%Y/%m/%Y-%m-%d-%H%M%S.md")
+     ;; Rename buffers to their title
+     (add-hook 'howm-mode-hook 'howm-mode-set-buffer-name)
+     (add-hook 'after-save-hook 'howm-mode-set-buffer-name)
+     ;; Default recent to sorting by mtime
+     (advice-add 'howm-list-recent :after #'howm-view-sort-by-mtime)
+     ;; Default all to sorting by creation, newest first
+     (advice-add 'howm-list-all :after #'(lambda () (howm-view-sort-by-date t)))
+     (define-key howm-menu-mode-map "\C-h" nil)
+     (define-key riffle-summary-mode-map "\C-h" nil)
+     (define-key howm-view-contents-mode-map "\C-h" nil)
+     ;; Experiment with ripgrep
+     (setq howm-view-use-grep t)
+     (setq howm-view-grep-command "rg")
+     (setq howm-view-grep-option "-nH --no-heading --color never")
+     (setq howm-view-grep-extended-option nil)
+     (setq howm-view-grep-fixed-option "-F")
+     (setq howm-view-grep-expr-option nil)
+     (setq howm-view-grep-file-stdin-option nil)
+
+     ;; counsel-rg for howm
+     (defun howm-list--counsel-rg (match)
+       (if (string= match "")
+       (howm-list-all)
+     (if (or (null ivy--old-cands)
+         (equal ivy--old-cands '("No matches found")))
+             (message "No match")
+       (let ((howm-view-use-grep
+          #'(lambda (str file-list &optional fixed-p force-case-fold)
+                      (mapcar
+                       (lambda (cand)
+             (if (string-match "\\`\\(.*\\):\\([0-9]+\\):\\(.*\\)\\'" cand)
+                             (let ((file (match-string-no-properties 1 cand))
+                   (line (match-string-no-properties 2 cand))
+                   (match-line (match-string-no-properties 3 cand)))
+                               (list (expand-file-name file howm-directory)
+                                     (string-to-number line)
+                                     match-line))))
+                       ivy--old-cands))))
+             (howm-search ivy--old-re t)
+             (riffle-set-place
+          (1+ (cl-position match ivy--old-cands :test 'string=)))))))
+
+      (defun howm-counsel-rg ()
+        "Interactively grep for a string in your howm notes using rg."
+        (interactive)
+        (let ((default-directory howm-directory)
+              (counsel-ag-base-command counsel-rg-base-command)
+              (counsel-ag-command (counsel--format-ag-command "--glob=!*~" "%s")))
+          (ivy-read "Search all (rg): "
+                #'counsel-ag-function
+                :dynamic-collection t
+                :keymap counsel-ag-map
+                :action #'howm-list--counsel-rg
+                :require-match t
+                :caller 'counsel-rg)))
+
+      (define-key global-map (concat howm-prefix "r") 'howm-counsel-rg))
 
 (use-package todotxt-mode
   :defer t
