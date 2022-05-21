@@ -316,11 +316,6 @@
 
       (define-key global-map (concat howm-prefix "r") 'howm-counsel-rg))
 
-(use-package todotxt-mode
-  :defer t
-  :config
-  (setq todotxt-default-file (expand-file-name "~/Sync/todo.txt")))
-
 (use-package elfeed
   :defer t
   :config
@@ -362,7 +357,7 @@
  '(custom-safe-themes
    '("ced4e3d3440ba3a74bbb2b107ba9e973373b5c656dcfd37c1ac7298cd974daf0" default))
  '(package-selected-packages
-   '(elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
+   '(elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
