@@ -72,8 +72,8 @@
 (global-set-key (kbd "C-c u") 'elfeed-update)
 
 ;; CUSTOM HOOKS
-(add-hook 'text-mode-hook 'turn-on-auto-fill) ; automatic line-breaks for txt and markdown
-(add-hook 'markdown-mode 'turn-on-auto-fill)
+;; (add-hook 'text-mode-hook 'turn-on-auto-fill) ; automatic line-breaks for txt and markdown
+;; (add-hook 'markdown-mode 'turn-on-auto-fill)
 
 ;; ERC SETUP
 (setq erc-server "irc.libera.chat"
@@ -220,6 +220,7 @@
   :bind (("C-M-g" . magit-status)))
 
 (use-package markdown-mode
+  :ensure t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown"))
 
@@ -323,11 +324,11 @@
   (setq elfeed-feeds
       '("http://nullprogram.com/feed/"
         "https://planet.emacslife.com/atom.xml"
-        "https://leancrew.com/all-this/feed.json"
+        "https://leancrew.com/all-this/feed/"
         "https://www.audiothing.net/feed/"
         "https://branch.climateaction.tech/feed/"
         "https://blog.codinghorror.com/rss/"
-        "https://daringfireball.net/feeds/json"
+        "https://daringfireball.net/feeds/main"
         "https://www.dragonflydigest.com/feed"
         "http://morrick.me/archives/tag/english/feed"
         "https://flak.tedunangst.com/rss"
@@ -335,9 +336,8 @@
         "https://lwn.net/headlines/newrss"
         "https://mjtsai.com/blog/feed/"
         "https://mullvad.net/blog/feed/rss/"
-        "https://nnw.ranchero.com/feed.json"
         "https://ubuntustudio.org/feed/"
-        "https://onefoottsunami.com/feed/json/"
+        "https://onefoottsunami.com/feed/atom/"
         "https://www.smbc-comics.com/comic/rss"
         ("https://lapcatsoftware.com/articles/atom.xml" apple blog)
         "https://torrentfreak.com/feed/"
