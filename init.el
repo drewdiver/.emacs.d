@@ -20,6 +20,7 @@
 (setq prelude-use-smooth-scrolling t)
 (setq gc-cons-threshold 50000000)
 (setq large-file-warning-threshold 100000000)
+(setq linum-format "%d ") ;; add space after line number
 
 ;; For specifics, use C-h v then type temporary-file-directory and hit enter.
 (setq backup-directory-alist
@@ -75,6 +76,12 @@
 ;; (add-hook 'text-mode-hook 'turn-on-auto-fill) ; automatic line-breaks for txt and markdown
 ;; (add-hook 'markdown-mode 'turn-on-auto-fill)
 
+;; ;; Disable line numbers for some modes
+;; (dolist (mode '(markdown-mode-hook
+;;                 term-mode-hook
+;;                 eshell-mode-hook))
+;;   (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
 ;; ERC SETUP
 (setq erc-server "irc.libera.chat"
       erc-port 6697
@@ -109,7 +116,6 @@
 
 ;; PACKAGES
 (use-package doom-themes ;; flatwhite, plain, tokyo-night are all nice
-  :ensure t
   :config
   ;; Global settings (defaults)
   (setq doom-themes-enable-bold t    ; if nil, bold is universally disabled
@@ -121,16 +127,14 @@
 
 ;; Must to run M-x all-the-icons-install-fonts
 (use-package doom-modeline
-  :ensure t
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
 
 (use-package circadian
-  :ensure t
   :config
   (setq calendar-latitude 59.3)
   (setq calendar-longitude 18.1)
-  (setq circadian-themes '((:sunrise . doom-flatwhite)
+  (setq circadian-themes '((:sunrise . tango) ;; 
                            (:sunset  . doom-tokyo-night)))
   (circadian-setup))
 
@@ -151,10 +155,20 @@
     (smartparens-global-mode 1)
     (show-paren-mode t)))
 
-(use-package auto-complete
+(use-package elpy
   :ensure t
+  :init
+  (elpy-enable)
   :config
-  (global-auto-complete-mode t))
+  (setq elpy-rpc-python-command "python3")
+  (setq python-shell-interpreter "python3"))
+
+;; (use-package company
+;;   :ensure t
+;;   :init
+;;   (add-hook 'after-init-hook 'global-company-mode)
+;;    (eval-after-load "company"
+;;     '(add-to-list 'company-backends '(company-anaconda :with company-capf))))
 
 (use-package counsel
   :bind (("M-x" . counsel-M-x)
@@ -162,6 +176,12 @@
          ("C-x C-f" . counsel-find-file)
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
+
+(use-package which-key
+  :init (which-key-mode)
+  :diminish which-key-mode
+  :config
+  (setq which-key-idle-delay 0.3))
 
 (use-package helpful
   :custom
@@ -198,13 +218,6 @@
   :init
   (ivy-rich-mode 1))
 
-(use-package neotree
-  :defer t
-  :config
-  ;; Disable line-numbers minor mode for neotree
-  (add-hook 'neo-after-create-hook (lambda (&optional dummy) (display-line-numbers-mode -1)))
-  (global-set-key [f8] 'neotree-toggle))
-
 (use-package projectile
   :ensure t
   :init
@@ -215,38 +228,15 @@
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)) ;; Recommended keymap prefix on Windows/Linux
   )
 
-(use-package magit
-  :defer t
-  :bind (("C-M-g" . magit-status)))
-
 (use-package markdown-mode
-  :ensure t
-  :mode ("README\\.md\\'" . gfm-mode)
-  :init (setq markdown-command "multimarkdown"))
-
-(use-package which-key
-  :init (which-key-mode)
-  :diminish which-key-mode
-  :config
-  (setq which-key-idle-delay 0.3))
-
-(use-package hydra)
-
-(defhydra hydra-zoom (global-map "<f2>")
-  "zoom"
-  ("g" text-scale-increase "in")
-  ("l" text-scale-decrease "out"))
+  :mode ("\\\.md\\'" . markdown-mode)
+  :hook (markdown-mode . auto-fill-mode))
 
 (use-package faust-mode
   :mode ("\\.dsp?\\'" . faust-mode))
 
-(use-package python
-  :mode ("\\.py\\'" . python-mode)
-  :interpreter ("python" . python-mode))
-
 ;; Fix eshell etc for macOS
 (use-package exec-path-from-shell
-  :ensure t
   :init
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
@@ -320,7 +310,7 @@
 (use-package elfeed
   :defer t
   :config
-  ;; (setq-default elfeed-search-filter "@1-days-ago")
+  (setq-default elfeed-search-filter "@1-week-ago +unread ")
   (setq elfeed-feeds
       '("http://nullprogram.com/feed/"
         "https://planet.emacslife.com/atom.xml"
@@ -355,9 +345,9 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
-   '("ced4e3d3440ba3a74bbb2b107ba9e973373b5c656dcfd37c1ac7298cd974daf0" default))
+   '("353ffc8e6b53a91ac87b7e86bebc6796877a0b76ddfc15793e4d7880976132ae" "ced4e3d3440ba3a74bbb2b107ba9e973373b5c656dcfd37c1ac7298cd974daf0" default))
  '(package-selected-packages
-   '(elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
+   '(focus elpy elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
