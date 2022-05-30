@@ -1,6 +1,7 @@
 .DS_Store
 url/
 elpa/
+elpy/
 eshell/
 ac-comphist.dat
 transient/
