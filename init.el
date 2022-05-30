@@ -73,14 +73,16 @@
 (global-set-key (kbd "C-c u") 'elfeed-update)
 
 ;; CUSTOM HOOKS
-;; (add-hook 'text-mode-hook 'turn-on-auto-fill) ; automatic line-breaks for txt and markdown
-;; (add-hook 'markdown-mode 'turn-on-auto-fill)
 
-;; ;; Disable line numbers for some modes
-;; (dolist (mode '(markdown-mode-hook
-;;                 term-mode-hook
-;;                 eshell-mode-hook))
-;;   (add-hook mode (lambda () (display-line-numbers-mode 0))))
+;; Enable line wrapping for some modes
+(dolist (mode '(text-mode-hook
+                markdown-mode-hook))
+  (add-hook mode (lambda () (auto-fill-mode 1))))
+
+;; Enable line numbers for some modes
+(dolist (mode '(python-mode-hook
+                sh-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
 ;; ERC SETUP
 (setq erc-server "irc.libera.chat"
@@ -337,7 +339,8 @@
         "https://www.omgubuntu.co.uk/feed"
         "https://nitter.net/viznut/rss"
         "https://nitter.net/2600stockholm/rss"
-        "https://web3isgoinggreat.com/feed.xml")))
+        "https://web3isgoinggreat.com/feed.xml"
+        "https://fastmail.blog/rss/")))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
