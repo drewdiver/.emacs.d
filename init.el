@@ -21,6 +21,7 @@
 (setq gc-cons-threshold 50000000)
 (setq large-file-warning-threshold 100000000)
 (setq linum-format "%d ") ;; add space after line number
+(set-default 'truncate-lines t) ;; disable line wrapping
 
 ;; For specifics, use C-h v then type temporary-file-directory and hit enter.
 (setq backup-directory-alist
@@ -59,6 +60,7 @@
   (message "Saved buffer contents in journal"))
 
 ;; CUSTOM KEYBINDINGS
+(global-set-key (kbd "C-x r;") 'comment-region)
 (global-set-key (kbd "C-c E") 'eval-buffer) ; M-x eval-buffer becomes cumbersom
 (global-set-key (kbd "C-c I") (lambda () (interactive) (find-file user-init-file))) ; open my init.el
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; use esc to quit prompts
@@ -71,8 +73,7 @@
 (global-set-key (kbd "C-c m") 'mu4e)
 (global-set-key (kbd "C-c e") 'elfeed)
 (global-set-key (kbd "C-c u") 'elfeed-update)
-
-;; CUSTOM HOOKS
+(global-set-key [f7] 'fci-mode)
 
 ;; Enable line wrapping for some modes
 (dolist (mode '(text-mode-hook
@@ -81,7 +82,8 @@
 
 ;; Enable line numbers for some modes
 (dolist (mode '(python-mode-hook
-                sh-mode-hook))
+                sh-mode-hook
+                emacs-lisp-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
 ;; ERC SETUP
@@ -145,8 +147,7 @@
   :config
   (define-globalized-minor-mode my-global-fci-mode fci-mode turn-on-fci-mode)
   ;; (my-global-fci-mode 1)
-  (setq fci-rule-column 90) ; set page guide at 90 like BBEdit default
-  (global-set-key [f7] 'fci-mode))
+  (setq fci-rule-column 90)) ; set page guide at 90 like BBEdit default)
 
 (use-package smartparens
   :ensure t
@@ -165,12 +166,15 @@
   (setq elpy-rpc-python-command "python3")
   (setq python-shell-interpreter "python3"))
 
-;; (use-package company
-;;   :ensure t
-;;   :init
-;;   (add-hook 'after-init-hook 'global-company-mode)
-;;    (eval-after-load "company"
-;;     '(add-to-list 'company-backends '(company-anaconda :with company-capf))))
+(use-package company
+  :ensure t
+  :init
+  (add-hook 'after-init-hook 'global-company-mode)
+  :config
+  (setq company-idle-delay 0) ;; no delay in showing suggestions
+  (setq company-minimum-prefix-length 1) ;; show suggestion after 1 chatacter
+  (setq company-selection-wrap-around t) ;; auto wrap at end of list
+  (company-tng-configure-default)) ;; use tab to cycle
 
 (use-package counsel
   :bind (("M-x" . counsel-M-x)
@@ -216,9 +220,7 @@
   :config
   (ivy-mode 1))
 
-(use-package ivy-rich
-  :init
-  (ivy-rich-mode 1))
+(use-package ivy-rich :init (ivy-rich-mode 1))
 
 (use-package projectile
   :ensure t
@@ -232,10 +234,10 @@
 
 (use-package markdown-mode
   :mode ("\\\.md\\'" . markdown-mode)
-  :hook (markdown-mode . auto-fill-mode))
+  :hook
+  (markdown-mode . auto-fill-mode))
 
-(use-package faust-mode
-  :mode ("\\.dsp?\\'" . faust-mode))
+(use-package faust-mode :mode ("\\.dsp?\\'" . faust-mode))
 
 ;; Fix eshell etc for macOS
 (use-package exec-path-from-shell
@@ -246,8 +248,8 @@
 (use-package howm
      :config
      ;; Directory configuration
-     (setq howm-home-directory "~/Sync/howm/")
-     (setq howm-directory "~/Sync/howm/")
+     (setq howm-home-directory "~/howm/")
+     (setq howm-directory "~/howm/")
      (setq howm-keyword-file (expand-file-name ".howm-keys" howm-home-directory))
      (setq howm-history-file (expand-file-name ".howm-history" howm-home-directory))
      (setq howm-file-name-format "%Y/%m/%Y-%m-%d-%H%M%S.md")
@@ -349,8 +351,40 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    '("353ffc8e6b53a91ac87b7e86bebc6796877a0b76ddfc15793e4d7880976132ae" "ced4e3d3440ba3a74bbb2b107ba9e973373b5c656dcfd37c1ac7298cd974daf0" default))
+ '(exwm-floating-border-color "#252630")
+ '(fci-rule-color "#9099c0")
+ '(highlight-tail-colors ((("#222e36") . 0) (("#29313b") . 20)))
+ '(jdee-db-active-breakpoint-face-colors (cons "#414868" "#b4f9f8"))
+ '(jdee-db-requested-breakpoint-face-colors (cons "#414868" "#73daca"))
+ '(jdee-db-spec-breakpoint-face-colors (cons "#414868" "#8189af"))
+ '(objed-cursor-color "#f7768e")
  '(package-selected-packages
-   '(focus elpy elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package)))
+   '(olivetti emacsql emacs-request wallabag focus elpy elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package))
+ '(pdf-view-midnight-colors (cons "#a9b1d6" "#1a1b26"))
+ '(rustic-ansi-faces
+   ["#1a1b26" "#f7768e" "#73daca" "#e0af68" "#7aa2f7" "#bb9af7" "#b4f9f8" "#a9b1d6"])
+ '(vc-annotate-background "#1a1b26")
+ '(vc-annotate-color-map
+   (list
+    (cons 20 "#73daca")
+    (cons 40 "#97cba9")
+    (cons 60 "#bbbd88")
+    (cons 80 "#e0af68")
+    (cons 100 "#eaa966")
+    (cons 120 "#f4a365")
+    (cons 140 "#ff9e64")
+    (cons 160 "#e89c94")
+    (cons 180 "#d19bc5")
+    (cons 200 "#bb9af7")
+    (cons 220 "#cf8ed4")
+    (cons 240 "#e382b1")
+    (cons 260 "#f7768e")
+    (cons 280 "#d97a96")
+    (cons 300 "#bc7f9e")
+    (cons 320 "#9e84a6")
+    (cons 340 "#9099c0")
+    (cons 360 "#9099c0")))
+ '(vc-annotate-very-old-color nil))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
