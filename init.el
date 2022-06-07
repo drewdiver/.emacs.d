@@ -1,5 +1,6 @@
 ;; ENV SETUP
 (setq inhibit-startup-message t)
+(set-frame-parameter nil 'fullscreen 'fullboth)
 
 (setq user-full-name "Drew Diver"
       user-mail-address "shout@drewdiver.com")
@@ -53,6 +54,7 @@
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
+;; could call delete-active-region
 (defun dd/send-buffer-to-jrnl ()
   "Sends the content of the current buffer to jrnl."
   (interactive)
@@ -65,7 +67,7 @@
 (global-set-key (kbd "C-c I") (lambda () (interactive) (find-file user-init-file))) ; open my init.el
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; use esc to quit prompts
 (global-set-key (kbd "C-x k") 'kill-this-buffer) ; kill current buffer
-(global-set-key (kbd "C-c t") 'toggle-truncate-lines) ; turn off line wrapping
+(global-set-key (kbd "C-c T") 'toggle-truncate-lines) ; turn off line wrapping
 (global-set-key (kbd "C-c C-v") 'view-mode) ; enable view-mode
 (global-set-key (kbd "C-c L") 'hl-line-mode) ; enable line highlight
 (global-set-key (kbd "C-c l") 'linum-mode) ; enable line numbers for current buffer
@@ -74,6 +76,7 @@
 (global-set-key (kbd "C-c e") 'elfeed)
 (global-set-key (kbd "C-c u") 'elfeed-update)
 (global-set-key [f7] 'fci-mode)
+(global-set-key (kbd "C-c t") 'todotxt)
 
 ;; Enable line wrapping for some modes
 (dolist (mode '(text-mode-hook
@@ -138,8 +141,8 @@
   :config
   (setq calendar-latitude 59.3)
   (setq calendar-longitude 18.1)
-  (setq circadian-themes '((:sunrise . tango) ;; 
-                           (:sunset  . doom-tokyo-night)))
+  (setq circadian-themes '((:sunrise . doom-flatwhite) ;; tango light is also nice...
+                           (:sunset  . doom-zenburn)))
   (circadian-setup))
 
 (use-package fill-column-indicator
@@ -176,6 +179,13 @@
   (setq company-selection-wrap-around t) ;; auto wrap at end of list
   (company-tng-configure-default)) ;; use tab to cycle
 
+(use-package good-scroll
+  :ensure t
+  :config
+  (good-scroll-mode 1)
+  (global-set-key [next] #'good-scroll-up-full-screen)
+  (global-set-key [prior] #'good-scroll-down-full-screen))
+
 (use-package counsel
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-ibuffer)
@@ -188,6 +198,11 @@
   :diminish which-key-mode
   :config
   (setq which-key-idle-delay 0.3))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :config
+  (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
 
 (use-package helpful
   :custom
@@ -244,6 +259,11 @@
   :init
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize)))
+
+(use-package todotxt
+  :ensure t
+  :config
+  (setq todotxt-file "~/journal/todo.txt"))
 
 (use-package howm
      :config
@@ -314,35 +334,89 @@
 (use-package elfeed
   :defer t
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread ")
+  (setq-default elfeed-search-filter "@2-weeks-ago +unread ")
+
+  ;; Entries older than 2 weeks are marked as read
+  (add-hook 'elfeed-new-entry-hook
+          (elfeed-make-tagger :before "2 weeks ago"
+                              :remove 'unread))
+
+  ;; (defun add-entry-categories-to-tags (entry)
+  ;;   (dolist (category (elfeed-meta entry :categories) entry)
+  ;;     (let ((tag (tagize-for-elfeed category)))
+  ;;       (when tag
+  ;;         (elfeed-tag entry tag)))))
+  ;; (add-hook 'elfeed-new-entry-hook #'add-entry-categories-to-tags)
+
+  ;; ;; useful if I want to mute uninteresting stuff
+  ;; (add-hook 'elfeed-new-entry-hook
+  ;;           (elfeed-make-tagger :feed-url "example\\.com"
+  ;;                               :entry-title '(not "something interesting")
+  ;;                               :add 'junk
+  ;;                               :remove 'unread))
+  
+  ;; auto-tagging
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger
+             :feed-url "dragonflydigest\\.com"
+             :entry-title "^Lazy Reading"
+             :add 'lazy-reading))
+  
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger
+             :feed-url "dragonflydigest\\.com"
+             :entry-title "^In Other BSDs"
+             :add 'in-other-bsds))
+
+  (defface elfeed-lazy-reading
+    '((t :background "#e2e9c1"))
+    "Highlights the Lazy Reading entry."
+    :group 'elfeed)
+
+  (push '(lazy-reading elfeed-lazy-reading)
+        elfeed-search-face-alist)
+           
+  (defface elfeed-in-other-bsds   
+    '((t :background "#e2e9c1"))
+    "Highlights the In Other BSDs entry."
+    :group 'elfeed)
+
+  (push '(in-other-bsds elfeed-in-other-bsds)
+        elfeed-search-face-alist)
+  
   (setq elfeed-feeds
-      '("http://nullprogram.com/feed/"
-        "https://planet.emacslife.com/atom.xml"
-        "https://leancrew.com/all-this/feed/"
-        "https://www.audiothing.net/feed/"
-        "https://branch.climateaction.tech/feed/"
-        "https://blog.codinghorror.com/rss/"
-        "https://daringfireball.net/feeds/main"
-        "https://www.dragonflydigest.com/feed"
-        "http://morrick.me/archives/tag/english/feed"
-        "https://flak.tedunangst.com/rss"
-        "https://cdn.jwz.org/blog/feed/"
-        "https://lwn.net/headlines/newrss"
-        "https://mjtsai.com/blog/feed/"
-        "https://mullvad.net/blog/feed/rss/"
-        "https://ubuntustudio.org/feed/"
-        "https://onefoottsunami.com/feed/atom/"
-        "https://www.smbc-comics.com/comic/rss"
-        ("https://lapcatsoftware.com/articles/atom.xml" apple blog)
-        "https://torrentfreak.com/feed/"
-        ("https://valhalladsp.com/feed/" DSP blog)
-        "Http://nullprogram.com/feed/"
-        "https://planet.emacslife.com/atom.xml"
-        "https://www.omgubuntu.co.uk/feed"
-        "https://nitter.net/viznut/rss"
-        "https://nitter.net/2600stockholm/rss"
-        "https://web3isgoinggreat.com/feed.xml"
-        "https://fastmail.blog/rss/")))
+        '(("http://nullprogram.com/feed/" blog emacs dev)
+          ("https://theoverspill.blog/feed/" blog news tech)
+          ("https://planet.emacslife.com/atom.xml" emacs)
+          ("https://leancrew.com/all-this/feed/" blog dev apple)
+          ("https://www.audiothing.net/feed/" audio dsp)
+          ("https://blog.codinghorror.com/rss/" blog)
+          ("https://daringfireball.net/feeds/main" blog news apple)
+          ("https://www.dragonflydigest.com/feed" blog bsd)
+          ("https://scriptingosx.com/feed/" blog apple devops)
+          ("http://morrick.me/archives/tag/english/feed" blog apple)
+          ("https://flak.tedunangst.com/rss" blog bsd dev)
+          ("https://cdn.jwz.org/blog/feed/" blog tech)
+          ("https://lwn.net/headlines/newrss" news linux)
+          ("https://mjtsai.com/blog/feed/" blog apple dev)
+          ("https://mullvad.net/blog/feed/rss/" blog security)
+          ("https://ubuntustudio.org/feed/" linux audio)
+          ("https://onefoottsunami.com/feed/atom/" blog news)
+          ("https://www.smbc-comics.com/comic/rss" comics)
+          ("https://lapcatsoftware.com/articles/atom.xml" blog apple)
+          ("https://torrentfreak.com/feed/" news piracy)
+          ("https://valhalladsp.com/feed/" blog audio dsp)
+          ("https://planet.emacslife.com/atom.xml" emacs)
+          ("https://www.omgubuntu.co.uk/feed" linux)
+          ("https://nitter.net/viznut/rss" permacomputing twitter)
+          ("https://nitter.net/2600stockholm/rss" twitter)
+          ("https://web3isgoinggreat.com/feed.xml" news crypto)
+          ("https://fastmail.blog/rss/" blog)
+          ("https://www.theatlantic.com/feed/author/david-frum/" news world)
+          ("https://www.theatlantic.com/feed/author/jonathan-haidt/" news world)
+          ("https://www.theregister.com/headlines.atom" news tech)
+          ("https://feeds2.feedburner.com/typepad/krisdedecker/lowtechmagazineenglish" permacomputing)
+          ("https://www.commitstrip.com/en/feed/" comics))))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -359,7 +433,7 @@
  '(jdee-db-spec-breakpoint-face-colors (cons "#414868" "#8189af"))
  '(objed-cursor-color "#f7768e")
  '(package-selected-packages
-   '(olivetti emacsql emacs-request wallabag focus elpy elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package))
+   '(good-scroll good-scroll-mode todotxt all-the-icons olivetti emacsql emacs-request wallabag focus elpy elfeed-web elfeed go-mode exec-path-from-shell neotree projectile helpful counsel ivy-rich helm circadian auto-complete faust-mode faust-lang evil markdown-mode fill-column-indicator which-key magit use-package))
  '(pdf-view-midnight-colors (cons "#a9b1d6" "#1a1b26"))
  '(rustic-ansi-faces
    ["#1a1b26" "#f7768e" "#73daca" "#e0af68" "#7aa2f7" "#bb9af7" "#b4f9f8" "#a9b1d6"])
@@ -400,3 +474,9 @@
                              (float-time
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
+
+;
+;(if (not (buffer-exists "jrnl"))
+;    (generate-new-buffer "jrnl"))
+
+(add-hook 'after-init-hook 'howm-menu)
