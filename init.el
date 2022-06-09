@@ -1,6 +1,5 @@
 ;; ENV SETUP
 (setq inhibit-startup-message t)
-(set-frame-parameter nil 'fullscreen 'fullboth)
 
 (setq user-full-name "Drew Diver"
       user-mail-address "shout@drewdiver.com")
@@ -55,6 +54,7 @@
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
 ;; could call delete-active-region
+;; open a mini scratch buffer named jrnl?
 (defun dd/send-buffer-to-jrnl ()
   "Sends the content of the current buffer to jrnl."
   (interactive)
