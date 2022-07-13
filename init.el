@@ -15,13 +15,12 @@
 (set-keyboard-coding-system 'utf-8)
 (setq-default tab-width 4
               indent-tabs-mode nil) ; tabs are spaces
-(setq prelude-use-smooth-scrolling t)
 (setq gc-cons-threshold 50000000)
 (setq large-file-warning-threshold 100000000)
-(setq linum-format "%d ") ;; add space after line number
 (set-default 'truncate-lines t) ;; disable line wrapping
+(display-battery-mode 1)
 
-;; For specifics, use C-h v then type temporary-file-directory and hit enter.
+;; For specifics, use C-h v then type temporary-file-directory and hit enter
 (setq backup-directory-alist
       `((".*" . ,temporary-file-directory)))
 (setq auto-save-file-name-transforms
@@ -35,8 +34,12 @@
 ;; Enable line numbers for some modes
 (dolist (mode '(python-mode-hook
                 sh-mode-hook
-                emacs-lisp-mode-hook))
+                emacs-lisp-mode-hook
+                javascript-mode-hook
+                xml-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+(add-to-list 'auto-mode-alist '("\\.recipe\\'" . xml-mode))
 
 ;; Use mu4e on Linux but skip mu4e setup on macOS
 (if (not (eq system-type 'darwin))
@@ -65,31 +68,62 @@
    smtpmail-smtp-server         "smtp.fastmail.com")
 )
 
+;; allow editing of binary .plist files in macOS
+(add-to-list 'jka-compr-compression-info-list
+             ["\\.plist$"
+              "converting text XML to binary plist"
+              "plutil"
+              ("-convert" "binary1" "-o" "-" "-")
+              "converting binary plist to text XML"
+              "plutil"
+              ("-convert" "xml1" "-o" "-" "-")
+              nil nil "bplist"])
+  
+(jka-compr-update)
+
+;; (setq dotfiles-dir (file-name-directory
+;;                     (or (buffer-file-name) load-file-name)))
+;; (add-to-list 'load-path (concat dotfiles-dir "/modes-el"))
+;; (autoload 'jrnl-mode "jrnl-mode.el" "..." t)
+
+;; JRNL highlighting
+;; (add-to-list 'auto-mode-alist '("\\.jrnl$" . jrnl-mode))
+
+(defun dd/clear-buffer ()
+  "Erases contents of current buffer and keep out of kill ring."
+  (interactive)
+  (if (y-or-n-p "Clear buffer? ")
+      (progn
+        (delete-region (point-min) (point-max))
+        (message "Buffer cleared!"))
+        (message "Buffer NOT cleared.")))
+
+(defun dd/send-buffer-to-jrnl ()
+  "Sends the content of the current buffer to jrnl."
+  (interactive)
+  (call-process-region (point-min) (point-max) "jrnl")
+  (message "Saved buffer contents in journal")
+  (dd/clear-buffer))
+
 (defun er-switch-to-previous-buffer ()
   "Switch to previously open buffer."
   (interactive)
   (switch-to-buffer (other-buffer (current-buffer) 1)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; CUSTOM KEYBINDINGS                   ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;; CUSTOM KEYBINDINGS
 (global-set-key (kbd "C-c i") (lambda () (interactive) (find-file user-init-file)))
 (global-set-key (kbd "C-c e") 'eval-buffer)
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit) ; use esc to quit prompts
 (global-set-key (kbd "C-x k") 'kill-this-buffer) ; kill current buffer
-(global-set-key (kbd "C-c T") 'toggle-truncate-lines) ; turn off line wrapping
+(global-set-key (kbd "C-c r") 'toggle-truncate-lines) ; turn off line wrapping
 (global-set-key (kbd "C-c C-v") 'view-mode) ; enable view-mode
 (global-set-key (kbd "C-c L") 'hl-line-mode) ; enable line highlight
 (global-set-key (kbd "C-c l") 'linum-mode) ; enable line numbers for current buffer
 (global-set-key (kbd "C-c b") #'er-switch-to-previous-buffer)
 (global-set-key (kbd "C-c m") 'mu4e)
-(global-set-key (kbd "C-c t") 'todotxt)
+;; (global-set-key (kbd "C-c t") 'todotxt)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; USE-PACKAGE SETUP AND PACKAGES BELOW ;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;; USE-PACKAGE SETUP AND PACKAGES BELOW
 (require 'package)
 
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
@@ -111,19 +145,25 @@
   :config
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
+  ;;(load-theme 'doom-solarized-light t)
   (doom-themes-visual-bell-config))
 
+;; https://github.com/doomemacs/doomemacs/blob/develop/modules/ui/modeline/README.org#the-right-side-of-the-modeline-is-cut-off
 (use-package doom-modeline
+  :ensure t
   :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
-
-(use-package circadian
   :config
-  (setq calendar-latitude 59.3)
-  (setq calendar-longitude 18.1)
-  (setq circadian-themes '((:sunrise . doom-opera-light) ;; color-theme-standard
-                           (:sunset  . doom-zenburn)))
-  (circadian-setup))
+  (setq all-the-icons-scale-factor 1.1)
+  :custom (doom-modeline-height 20))
+
+;; (use-package circadian
+;;   :ensure t
+;;   :config
+;;   (setq calendar-latitude 59.3)
+;;   (setq calendar-longitude 18.1)
+;;   (setq circadian-themes '((:sunrise . doom-opera-light) ;; color-theme-standard
+;;                            (:sunset  . doom-zenburn)))
+;;   (circadian-setup))
 
 (use-package exec-path-from-shell
   :init
@@ -192,7 +232,7 @@
   :diminish
   :bind (("C-s" . swiper)
          :map ivy-minibuffer-map
-         ("TAB" . ivy-alt-done)	
+         ("TAB" . ivy-alt-done)
          ("C-l" . ivy-alt-done)
          ("C-j" . ivy-next-line)
          ("C-k" . ivy-previous-line)
@@ -218,6 +258,10 @@
     (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)) ;; Recommended keymap prefix on Windows/Linux
   )
 
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode))
+
 (use-package elpy
   :ensure t
   :init
@@ -226,15 +270,25 @@
   (setq elpy-rpc-python-command "python3")
   (setq python-shell-interpreter "python3"))
 
+(use-package yaml-mode
+  :mode ("\\.ya?ml\\'" . yaml-mode))
+
 (use-package markdown-mode
   :mode ("\\\.md\\'" . markdown-mode)
   :hook
   (markdown-mode . auto-fill-mode))
 
-(use-package todotxt
+(use-package todotxt-mode
   :ensure t
   :config
-  (setq todotxt-file "~/journal/todo.txt"))
+  (setq todotxt-default-file (expand-file-name "~/journal/todo.txt"))
+  (setq todotxt-default-archive-file (expand-file-name "~/journal/done.txt"))
+  (add-to-list 'auto-mode-alist '("todo\\.txt\\'" . todotxt-mode))
+  (define-key global-map (kbd "C-c T") 'todotxt-open-file)
+  (define-key global-map (kbd "C-c t") 'todotxt-add-todo))
+
+(use-package ledger-mode
+  :ensure t)
 
 (use-package howm
      :config
@@ -308,13 +362,16 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(reveal-in-osx-finder all-the-icons elpy company projectile markdown-mode howm todotxt exec-path-from-shell ivy-rich helpful counsel rainbow-delimiters which-key smartparens circadian doom-themes use-package doom-modeline)))
+   '(ledger-mode flycheck flymake-shellcheck yaml-mode todotxt-mode reveal-in-osx-finder all-the-icons elpy company projectile markdown-mode howm todotxt exec-path-from-shell ivy-rich helpful counsel rainbow-delimiters which-key smartparens circadian doom-themes use-package doom-modeline)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(mode-line :family nil :height))
+
+;; Create a temp buffer for "jrnl" entries if it doesn't already exist
+(get-buffer-create "jrnl")
 
 ;; Measure startup time
 (add-hook 'emacs-startup-hook
@@ -324,3 +381,6 @@
                              (float-time
                               (time-subtract after-init-time before-init-time)))
                      gcs-done)))
+
+(provide 'init)
+;;; init.el ends here
